@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(display display.c )
+add_executable(display display.c inc/ssd1306.c)
 
 pico_set_program_name(display "display")
 pico_set_program_version(display "0.1")
@@ -55,16 +55,14 @@ target_link_libraries(display PRIVATE
         hardware_timer
         hardware_pwm
 	    hardware_adc
-        pico_bootrom)
+        pico_bootrom
+        hardware_i2c
+        )
 
 # Add the standard include files to the build
 target_include_directories(display PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
 )
-
-# Add any user requested libraries
-target_link_libraries(display 
-        )
 
 pico_add_extra_outputs(display)
 
