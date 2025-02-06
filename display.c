@@ -50,6 +50,8 @@ static volatile double b = 1.0;
 // Variável ligada ao debounce dos botões
 static volatile uint32_t last_time = 0; 
 
+ssd1306_t ssd; // Inicializa a estrutura do display
+
 void init_all() {
     gpio_init(RLED_PIN);
     gpio_set_dir(RLED_PIN, GPIO_OUT);
@@ -74,6 +76,12 @@ void init_all() {
     gpio_init(BTNJ_PIN);
     gpio_set_dir(BTNJ_PIN, GPIO_IN);
     gpio_pull_up(BTNJ_PIN);
+}
+
+void get_led(bool R, bool G, bool B) {
+    gpio_put(RLED_PIN, R);
+    gpio_put(GLED_PIN, G);
+    gpio_put(BLED_PIN, B);
 }
 
 // Matriz com todos os dígitos
@@ -219,6 +227,12 @@ void gpio_irq_handler(uint gpio, uint32_t events){
             // Se o botão A for ativado, acrescenta na contagem
             if (gpio == BTNA_PIN){
 
+                gpio_put(GLED_PIN, !gpio_get(GLED_PIN)); // Alterna o estado do LED verde
+                printf("Estado do LED Verde Alternado.");
+                ssd1306_fill(&ssd, false); // Limpa o display
+                ssd1306_draw_string(&ssd, "LED VERDE ALT", 2, 48); // Desenha uma string 
+                ssd1306_send_data(&ssd); // Atualiza o display  
+
                 counter++;
                 print_digit(counter, pio, sm, r, g, b);
                 printf("counter = %i\n", counter);
@@ -226,6 +240,12 @@ void gpio_irq_handler(uint gpio, uint32_t events){
             }
             // Se o botão B for ativado, descresce na contagem   
             else if (gpio == BTNB_PIN){
+
+                gpio_put(BLED_PIN, !gpio_get(BLED_PIN)); // Alterna o estado do LED azul
+                printf("Estado do LED Azul Alternado.");
+                ssd1306_fill(&ssd, false); // Limpa o display
+                ssd1306_draw_string(&ssd, "LED AZUL ALT", 2, 48); // Desenha uma string 
+                ssd1306_send_data(&ssd); // Atualiza o display
 
                 counter = counter - 1;
                 print_digit(counter, pio, sm, r, g, b);
@@ -296,7 +316,6 @@ int main() {
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C); // Set the GPIO pin function to I2C
     gpio_pull_up(I2C_SDA); // Pull up the data line
     gpio_pull_up(I2C_SCL); // Pull up the clock line
-    ssd1306_t ssd; // Inicializa a estrutura do display
     ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco, I2C_PORT); // Inicializa o display
     ssd1306_config(&ssd); // Configura o display
     ssd1306_send_data(&ssd); // Envia os dados para o display
@@ -314,17 +333,11 @@ int main() {
         ssd1306_fill(&ssd, !cor); // Limpa o display
         ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
         ssd1306_draw_string(&ssd, "CEPEDI   TIC37", 8, 10); // Desenha uma string
-        ssd1306_draw_string(&ssd, "EMBARCATECHa", 20, 30); // Desenha uma string
-        ssd1306_draw_string(&ssd, "PROF WILTON", 15, 48); // Desenha uma string      
+        ssd1306_draw_string(&ssd, "EMBARCATECHaa", 20, 30); // Desenha uma string    
         ssd1306_send_data(&ssd); // Atualiza o display
 
-       // Repetição para que o LED vermelho pisque 5 vezes por segundo.
-       for (int i = 0; i < 5; i++){
-            gpio_put(RLED_PIN, 1);
-            sleep_ms(100);
-            gpio_put(RLED_PIN, 0);
-            sleep_ms(100);
-       }
+        sleep_ms(1000);
+
     }
 
     return 0;
