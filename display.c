@@ -17,13 +17,13 @@
 #define I2C_SCL 15
 #define endereco 0x3C
 
-//arquivo .pio
+// Arquivo .pio
 #include "display.pio.h"
 
-//número de LEDs
+// Número de LEDs da matriz
 #define NUM_PIXELS 25
 
-//pino de saída
+// Pino de saída da matriz
 #define OUT_PIN 7
 
 // Definição dos LEDs RGB
@@ -35,17 +35,16 @@
 #define BTNA_PIN 5
 #define BTNB_PIN 6
 
-// counter para mudança dos números da matriz
+// Variável de mudança de string para inteiro
 static volatile int ic = 0;
-
-// counter para mudança das cores
-int count_color = 0;
 
 // Variável ligada ao debounce dos botões
 static volatile uint32_t last_time = 0; 
 
-ssd1306_t ssd; // Inicializa a estrutura do display
+// Inicializa a estrutura do display
+ssd1306_t ssd; 
 
+// Inicialização dos lEDs e Botões
 void init_all() {
     gpio_init(RLED_PIN);
     gpio_set_dir(RLED_PIN, GPIO_OUT);
@@ -143,7 +142,7 @@ double digits[10][25] = {
 
 };
 
-//rotina para definição da intensidade de cores do led
+// Rotina para definição da intensidade de cores do LED
 uint32_t matrix_rgb(double b, double r, double g)
 {
   unsigned char R, G, B;
@@ -170,6 +169,7 @@ void pio_config(PIO pio, uint *offset, uint *sm) {
     display_program_init(pio, *sm, *offset, OUT_PIN);
 }
 
+// Função para imprimir um número na matriz de LEDs
 void print_digit(int digit, PIO pio, uint sm, double r, double g, double b){
     // Valor para intensidade dos LEDs
     double ity = 0.01;
@@ -275,11 +275,8 @@ int main() {
                 }
             }
         }
-        
         sleep_ms(1000);
-
     }
-
     return 0;
 
 }
