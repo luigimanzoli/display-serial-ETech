@@ -34,18 +34,12 @@
 // Definição dos botões
 #define BTNA_PIN 5
 #define BTNB_PIN 6
-#define BTNJ_PIN 22 // Botão do Joystick
 
 // counter para mudança dos números da matriz
-int counter = 0;
+static volatile int ic = 0;
 
 // counter para mudança das cores
 int count_color = 0;
-
-// Valores para definição das cores da matriz
-static volatile double r = 1.0; 
-static volatile double g = 1.0; 
-static volatile double b = 1.0;
 
 // Variável ligada ao debounce dos botões
 static volatile uint32_t last_time = 0; 
@@ -72,16 +66,6 @@ void init_all() {
     gpio_init(BTNB_PIN);
     gpio_set_dir(BTNB_PIN, GPIO_IN);
     gpio_pull_up(BTNB_PIN);
-
-    gpio_init(BTNJ_PIN);
-    gpio_set_dir(BTNJ_PIN, GPIO_IN);
-    gpio_pull_up(BTNJ_PIN);
-}
-
-void get_led(bool R, bool G, bool B) {
-    gpio_put(RLED_PIN, R);
-    gpio_put(GLED_PIN, G);
-    gpio_put(BLED_PIN, B);
 }
 
 // Matriz com todos os dígitos
@@ -202,10 +186,8 @@ void print_digit(int digit, PIO pio, uint sm, double r, double g, double b){
         }
     } else if (digit < 0) {
         printf("Valor incompatível.\n");
-        counter = 0;
     } else if (digit > 9){
         printf("Valor incompatível.\n");
-        counter = 9;
     }
 }
 
@@ -222,7 +204,6 @@ void gpio_irq_handler(uint gpio, uint32_t events){
         if (current_time - last_time > 200000){
             last_time = current_time;
             
-            // Se o botão A for ativado, acrescenta na contagem
             if (gpio == BTNA_PIN){
 
                 gpio_put(GLED_PIN, !gpio_get(GLED_PIN)); // Alterna o estado do LED verde
@@ -231,14 +212,7 @@ void gpio_irq_handler(uint gpio, uint32_t events){
                 ssd1306_draw_string(&ssd, "LED VERDE ALT", 2, 48); // Desenha uma string 
                 ssd1306_send_data(&ssd); // Atualiza o display  
 
-                /*
-                counter++;
-                print_digit(counter, pio, sm, r, g, b);
-                printf("counter = %i\n", counter);
-                */
-
             }
-            // Se o botão B for ativado, descresce na contagem   
             else if (gpio == BTNB_PIN){
 
                 gpio_put(BLED_PIN, !gpio_get(BLED_PIN)); // Alterna o estado do LED azul
@@ -247,42 +221,6 @@ void gpio_irq_handler(uint gpio, uint32_t events){
                 ssd1306_draw_string(&ssd, "LED AZUL ALT", 2, 48); // Desenha uma string 
                 ssd1306_send_data(&ssd); // Atualiza o display
 
-                /*
-                counter = counter - 1;
-                print_digit(counter, pio, sm, r, g, b);
-                printf("counter = %i\n", counter);
-                */
-
-            } 
-            // Se o botão do Joystick for ativado, a cor dos números da contagem muda
-            else if (gpio == BTNJ_PIN){
-                count_color++;
-                printf("Mudança de cor. Count_color = %i\n", count_color);
-                if (count_color > 3){
-                    count_color = 0;
-                    r = 1.0;
-                    g = 1.0;
-                    b = 1.0;
-                    print_digit(counter, pio, sm, r, g, b);
-                }
-                else if (count_color == 1){
-                    r = 1.0;
-                    g = 0.0;
-                    b = 0.0;
-                    print_digit(counter, pio, sm, r, g, b);
-                }
-                else if (count_color == 2){
-                    r = 0.0;
-                    g = 1.0;
-                    b = 0.0;
-                    print_digit(counter, pio, sm, r, g, b);
-                }
-                else if (count_color == 3){
-                    r = 0.0;
-                    g = 0.0;
-                    b = 1.0;
-                    print_digit(counter, pio, sm, r, g, b);
-                }
             }
     }
 
@@ -295,8 +233,6 @@ int main() {
     init_all();
     clock_init();
 
-    double r = 0.0, b = 0.0, g = 0.0;
-
     pio_config(pio, &offset, &sm);
 
     printf("Sistema inicializado.\n");
@@ -304,13 +240,6 @@ int main() {
     // Configuração dos botões como interrupções
     gpio_set_irq_enabled_with_callback(BTNA_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
     gpio_set_irq_enabled_with_callback(BTNB_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
-    gpio_set_irq_enabled_with_callback(BTNJ_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
-
-    // Iniciando o sistema escrevendo 0 na matriz de LEDs
-    print_digit(0, pio, sm, 1, 1, 1);
-
-    // Inicialização do display
-
     // I2C Initialisation. Using it at 400Khz.
     i2c_init(I2C_PORT, 400 * 1000);
 
@@ -326,36 +255,22 @@ int main() {
     ssd1306_fill(&ssd, false);
     ssd1306_send_data(&ssd);
 
-    bool cor = true;
-
     while (true) {
-        
-        /*
-        cor = !cor;
-        // Atualiza o conteúdo do display com animações
-        ssd1306_fill(&ssd, !cor); // Limpa o display
-        ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
-        ssd1306_draw_string(&ssd, "CEPEDI   TIC37", 8, 10); // Desenha uma string
-        ssd1306_draw_string(&ssd, "EMBARCATECHaa", 20, 30); // Desenha uma string    
-        ssd1306_send_data(&ssd); // Atualiza o display
-
-        */
        if (stdio_usb_connected())
         { // Certifica-se de que o USB está conectado
             char c;
             
-            if (scanf("%c", &c) == 1)
-            { // Lê caractere da entrada padrão
+            if (scanf("%c", &c) == 1) // Lê caractere da entrada padrão
+            { 
                 printf("Recebido: '%c'\n", c);
 
                 ssd1306_fill(&ssd, false); // Limpa o display
-                ssd1306_draw_string(&ssd, "DIGITADO:", 2, 38); // Desenha uma string 
-                ssd1306_draw_char(&ssd, c, 80, 38); // Desenha uma string 
-                ssd1306_send_data(&ssd); // Atualiza o display
+                ssd1306_draw_string(&ssd, "DIGITADO:", 2, 38);
+                ssd1306_draw_char(&ssd, c, 80, 38); // Desenha o caractere digitado
+                ssd1306_send_data(&ssd); // Manda a informação para o display
 
-                int ic = c - '0';
-
-                if (ic >= 0 && ic <= 9){
+                if (c >= '0' && c <= '9'){ // Se o caractere digitado for um número de 0 a 9, imprime na matriz
+                    ic = c - '0'; // Conversão de string para inteiro
                     print_digit(ic, pio, sm, 1, 1, 1);
                 }
             }
