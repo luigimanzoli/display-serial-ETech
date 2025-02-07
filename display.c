@@ -196,11 +196,9 @@ void print_digit(int digit, PIO pio, uint sm, double r, double g, double b){
     // Condição para que os valores não ultrapassem o intervalor desejado
     if (digit <= 9 && digit >= 0){
         for (int16_t i = 0; i < NUM_PIXELS; i++) {
-
             // Define a cor dos LEDs baseados nos valores de r, g e b
             led_value = matrix_rgb(b*ity*(digits[digit][24 - i]), r*ity*(digits[digit][24 - i]), g*ity*(digits[digit][24 - i]));
             pio_sm_put_blocking(pio, sm, led_value); // Envia o valor para o LED
-
         }
     } else if (digit < 0) {
         printf("Valor incompatível.\n");
@@ -228,28 +226,32 @@ void gpio_irq_handler(uint gpio, uint32_t events){
             if (gpio == BTNA_PIN){
 
                 gpio_put(GLED_PIN, !gpio_get(GLED_PIN)); // Alterna o estado do LED verde
-                printf("Estado do LED Verde Alternado.");
+                printf("Estado do LED Verde Alternado.\n");
                 ssd1306_fill(&ssd, false); // Limpa o display
                 ssd1306_draw_string(&ssd, "LED VERDE ALT", 2, 48); // Desenha uma string 
                 ssd1306_send_data(&ssd); // Atualiza o display  
 
+                /*
                 counter++;
                 print_digit(counter, pio, sm, r, g, b);
                 printf("counter = %i\n", counter);
+                */
 
             }
             // Se o botão B for ativado, descresce na contagem   
             else if (gpio == BTNB_PIN){
 
                 gpio_put(BLED_PIN, !gpio_get(BLED_PIN)); // Alterna o estado do LED azul
-                printf("Estado do LED Azul Alternado.");
+                printf("Estado do LED Azul Alternado.\n");
                 ssd1306_fill(&ssd, false); // Limpa o display
                 ssd1306_draw_string(&ssd, "LED AZUL ALT", 2, 48); // Desenha uma string 
                 ssd1306_send_data(&ssd); // Atualiza o display
 
+                /*
                 counter = counter - 1;
                 print_digit(counter, pio, sm, r, g, b);
                 printf("counter = %i\n", counter);
+                */
 
             } 
             // Se o botão do Joystick for ativado, a cor dos números da contagem muda
@@ -328,6 +330,7 @@ int main() {
 
     while (true) {
         
+        /*
         cor = !cor;
         // Atualiza o conteúdo do display com animações
         ssd1306_fill(&ssd, !cor); // Limpa o display
@@ -336,6 +339,28 @@ int main() {
         ssd1306_draw_string(&ssd, "EMBARCATECHaa", 20, 30); // Desenha uma string    
         ssd1306_send_data(&ssd); // Atualiza o display
 
+        */
+       if (stdio_usb_connected())
+        { // Certifica-se de que o USB está conectado
+            char c;
+            
+            if (scanf("%c", &c) == 1)
+            { // Lê caractere da entrada padrão
+                printf("Recebido: '%c'\n", c);
+
+                ssd1306_fill(&ssd, false); // Limpa o display
+                ssd1306_draw_string(&ssd, "DIGITADO:", 2, 38); // Desenha uma string 
+                ssd1306_draw_char(&ssd, c, 80, 38); // Desenha uma string 
+                ssd1306_send_data(&ssd); // Atualiza o display
+
+                int ic = c - '0';
+
+                if (ic >= 0 && ic <= 9){
+                    print_digit(ic, pio, sm, 1, 1, 1);
+                }
+            }
+        }
+        
         sleep_ms(1000);
 
     }
