@@ -34,6 +34,7 @@
 // Definição dos botões
 #define BTNA_PIN 5
 #define BTNB_PIN 6
+#define BTNJ_PIN 22 // Botão do Joystick
 
 // Variável de mudança de string para inteiro
 static volatile int ic = 0;
@@ -65,6 +66,10 @@ void init_all() {
     gpio_init(BTNB_PIN);
     gpio_set_dir(BTNB_PIN, GPIO_IN);
     gpio_pull_up(BTNB_PIN);
+
+    gpio_init(BTNJ_PIN);
+    gpio_set_dir(BTNJ_PIN, GPIO_IN);
+    gpio_pull_up(BTNJ_PIN);
 }
 
 // Matriz com todos os dígitos
@@ -208,8 +213,16 @@ void gpio_irq_handler(uint gpio, uint32_t events){
 
                 gpio_put(GLED_PIN, !gpio_get(GLED_PIN)); // Alterna o estado do LED verde
                 printf("Estado do LED Verde Alternado.\n");
-                ssd1306_fill(&ssd, false); // Limpa o display
-                ssd1306_draw_string(&ssd, "LED VERDE ALT", 2, 48); // Desenha uma string 
+
+                if (gpio_get(GLED_PIN)){
+                    ssd1306_draw_string(&ssd, "LED Verde", 2, 8); // Desenha uma string 
+                    ssd1306_draw_string(&ssd, "         ", 2, 21);
+                    ssd1306_draw_string(&ssd, "LIGADO", 2, 21);
+                }else{
+                    ssd1306_draw_string(&ssd, "LED Verde", 2, 8); // Desenha uma string 
+                    ssd1306_draw_string(&ssd, "DESLIGADO", 2, 21);
+                }
+                
                 ssd1306_send_data(&ssd); // Atualiza o display  
 
             }
@@ -217,8 +230,15 @@ void gpio_irq_handler(uint gpio, uint32_t events){
 
                 gpio_put(BLED_PIN, !gpio_get(BLED_PIN)); // Alterna o estado do LED azul
                 printf("Estado do LED Azul Alternado.\n");
-                ssd1306_fill(&ssd, false); // Limpa o display
-                ssd1306_draw_string(&ssd, "LED AZUL ALT", 2, 48); // Desenha uma string 
+
+                if (gpio_get(BLED_PIN)){
+                    ssd1306_draw_string(&ssd, "LED Azul", 2, 38); // Desenha uma string
+                    ssd1306_draw_string(&ssd, "         ", 2, 21); 
+                    ssd1306_draw_string(&ssd, "LIGADO", 2, 51);
+                }else{
+                    ssd1306_draw_string(&ssd, "LED Azul", 2, 38); // Desenha uma string 
+                    ssd1306_draw_string(&ssd, "DESLIGADO", 2, 51);
+                }
                 ssd1306_send_data(&ssd); // Atualiza o display
 
             }
@@ -255,7 +275,15 @@ int main() {
     ssd1306_fill(&ssd, false);
     ssd1306_send_data(&ssd);
 
+    /*
+    ssd1306_draw_string(&ssd, "Alfabeto", 2, 10);
+    ssd1306_draw_string(&ssd, "minusculo", 2, 19);
+    ssd1306_draw_string(&ssd, "abcdefghijklmnopqrstuvwxyz", 2, 38);
+    ssd1306_send_data(&ssd); // Manda a informação para o display
+    */
+    
     while (true) {
+        
        if (stdio_usb_connected())
         { // Certifica-se de que o USB está conectado
             char c;
