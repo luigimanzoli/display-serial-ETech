@@ -39,6 +39,9 @@
 // Variável de mudança de string para inteiro
 static volatile int ic = 0;
 
+// Variável de controle do terceiro botão
+static volatile int cont = 0;
+
 // Variável ligada ao debounce dos botões
 static volatile uint32_t last_time = 0; 
 
@@ -233,7 +236,7 @@ void gpio_irq_handler(uint gpio, uint32_t events){
 
                 if (gpio_get(BLED_PIN)){
                     ssd1306_draw_string(&ssd, "LED Azul", 2, 38); // Desenha uma string
-                    ssd1306_draw_string(&ssd, "         ", 2, 21); 
+                    ssd1306_draw_string(&ssd, "         ", 2, 51); 
                     ssd1306_draw_string(&ssd, "LIGADO", 2, 51);
                 }else{
                     ssd1306_draw_string(&ssd, "LED Azul", 2, 38); // Desenha uma string 
@@ -241,6 +244,20 @@ void gpio_irq_handler(uint gpio, uint32_t events){
                 }
                 ssd1306_send_data(&ssd); // Atualiza o display
 
+            }
+            else if (gpio == BTNJ_PIN){
+                cont++;
+                if (cont % 2 == 0){
+                    ssd1306_fill(&ssd, false); // Limpa o display
+                    ssd1306_send_data(&ssd); // Manda a informação para o display
+                }else{
+                    ssd1306_fill(&ssd, false); // Limpa o display
+                    ssd1306_draw_string(&ssd, "Alfabeto", 2, 10);
+                    ssd1306_draw_string(&ssd, "minusculo", 2, 19);
+                    ssd1306_draw_string(&ssd, "abcdefghijklmnopqrstuvwxyz", 2, 38);
+                    ssd1306_send_data(&ssd); // Manda a informação para o display
+                }
+                
             }
     }
 
@@ -260,6 +277,8 @@ int main() {
     // Configuração dos botões como interrupções
     gpio_set_irq_enabled_with_callback(BTNA_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
     gpio_set_irq_enabled_with_callback(BTNB_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
+    gpio_set_irq_enabled_with_callback(BTNJ_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
+
     // I2C Initialisation. Using it at 400Khz.
     i2c_init(I2C_PORT, 400 * 1000);
 
@@ -275,13 +294,6 @@ int main() {
     ssd1306_fill(&ssd, false);
     ssd1306_send_data(&ssd);
 
-    /*
-    ssd1306_draw_string(&ssd, "Alfabeto", 2, 10);
-    ssd1306_draw_string(&ssd, "minusculo", 2, 19);
-    ssd1306_draw_string(&ssd, "abcdefghijklmnopqrstuvwxyz", 2, 38);
-    ssd1306_send_data(&ssd); // Manda a informação para o display
-    */
-    
     while (true) {
         
        if (stdio_usb_connected())
@@ -293,8 +305,8 @@ int main() {
                 printf("Recebido: '%c'\n", c);
 
                 ssd1306_fill(&ssd, false); // Limpa o display
-                ssd1306_draw_string(&ssd, "DIGITADO:", 2, 38);
-                ssd1306_draw_char(&ssd, c, 80, 38); // Desenha o caractere digitado
+                ssd1306_draw_string(&ssd, "DIGITADO:", 35, 28);
+                ssd1306_draw_char(&ssd, c, 60, 38); // Desenha o caractere digitado
                 ssd1306_send_data(&ssd); // Manda a informação para o display
 
                 if (c >= '0' && c <= '9'){ // Se o caractere digitado for um número de 0 a 9, imprime na matriz
